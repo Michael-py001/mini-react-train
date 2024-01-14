@@ -1,3 +1,5 @@
+import ReactDOM from "./core/ReactDOM.js";
+import React from "./core/React.js";
 // v1
 // const dom = document.createElement("div");
 // dom.id = "root"
@@ -26,30 +28,6 @@
 //   },
 // };
 
-// 4 封装createTextNode
-function createTextNode(text) {
-  return {
-    type: "TEXT_ELEMENT",
-    props: {
-      nodeValue: text,
-      children: [],
-    },
-  };
-}
-
-//5 封装createElement
-function createElement(type, props, ...children) {
-  return {
-    type,
-    props: {
-      ...props,
-      children: children.map((child) =>{
-        return typeof child === "object" ? child : createTextNode(child)
-      }),
-    },
-  };
-}
-
 // // 6 使用封装的方法动态生成虚拟dom
 // const textEl = createTextNode("hello world");
 // const App = createElement("div", { id: "root" }, textEl);
@@ -65,28 +43,16 @@ function createElement(type, props, ...children) {
 
 // 7 封装render方法
 
-function render(el,container) {
-  const dom =
-    el.type === "TEXT_ELEMENT"
-      ? document.createTextNode(el.props.nodeValue)
-      : document.createElement(el.type);
-  // 设置props
-  Object.keys(el.props).forEach((key) => {
-    if(key !== 'children') { //children特殊处理
-      dom[key] = el.props[key]
-    }
-  })
+// 实现api：ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
-  // 处理children节点
-  const chilren = el.props.children || [];
-  chilren.forEach(child=>{
-    render(child,dom)
-  })
-
-  container.append(dom)
-}
-
-const App = createElement("div", { id: "root" }, 'hi ','hello world');
-// const App = createElement("div", { id: "root" }, 'hello world');
-console.log("App:",App);
-render(App,document.querySelector('#root'))
+// const ReactDOM = {
+//   createRoot(container) {
+//     return {
+//       render(App) {
+//         render(App, container);
+//       },
+//     };
+//   },
+// };
+const App = React.createElement("div", { id: "root" }, "hi ", "hello world");
+ReactDOM.createRoot(document.getElementById("root")).render(App);
