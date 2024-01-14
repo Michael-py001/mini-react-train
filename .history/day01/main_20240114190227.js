@@ -9,22 +9,22 @@
 // v2 react -> vdom -> js 对象 -> 真实 dom
 
 //2 抽离textElement
-// const textEl = {
-//   type: "TEXT_ELEMENT",
-//   props: {
-//     nodeValue: "hello world",
-//     children: [],
-//   },
-// };
+const textEl = {
+  type: "TEXT_ELEMENT",
+  props: {
+    nodeValue: "hello world",
+    children: [],
+  },
+};
 
 // 1 一个dom节点用js描述
-// const el = {
-//   type: "div",
-//   props: {
-//     id: "app",
-//     children: [textEl],
-//   },
-// };
+const el = {
+  type: "div",
+  props: {
+    id: "app",
+    children: [textEl],
+  },
+};
 
 // 4 封装createTextNode
 function createTextNode(text) {
@@ -43,16 +43,18 @@ function createElement(type, props, ...children) {
     type,
     props: {
       ...props,
-      children
+      children: children.map(child => {
+        return typeof child === 'object' ? child : createTextNode(child.props.nodeValue)
+      })
     }
   }
 }
-const textEl = createTextNode('hello world')
-const App = createElement('div', {id: 'root'}, textEl)
+
+const App = createElement('div', {id: 'root'}, createTextNode('hello world'))
 
 // 3 根据js描述的节点对象创建真实dom vdom -> dom
-const dom = document.createElement(App.type);
-dom.id = App.props.id;
+const dom = document.createElement(el.type);
+dom.id = el.props.id;
 document.querySelector('#root').append(dom)
 
 const textNode = document.createTextNode("");

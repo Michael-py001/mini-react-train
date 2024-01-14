@@ -18,13 +18,13 @@
 // };
 
 // 1 一个dom节点用js描述
-// const el = {
-//   type: "div",
-//   props: {
-//     id: "app",
-//     children: [textEl],
-//   },
-// };
+const el = {
+  type: "div",
+  props: {
+    id: "app",
+    children: [textEl],
+  },
+};
 
 // 4 封装createTextNode
 function createTextNode(text) {
@@ -43,7 +43,9 @@ function createElement(type, props, ...children) {
     type,
     props: {
       ...props,
-      children
+      children: children.map(child => {
+        return typeof child === 'object' ? child : createTextNode(child.props.nodeValue)
+      })
     }
   }
 }
