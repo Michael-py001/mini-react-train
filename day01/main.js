@@ -1,5 +1,5 @@
 import ReactDOM from "./core/ReactDOM.js";
-import React from "./core/React.js";
+import App from "./app.js";
 // v1
 // const dom = document.createElement("div");
 // dom.id = "root"
@@ -54,5 +54,5 @@ import React from "./core/React.js";
 //     };
 //   },
 // };
-const App = React.createElement("div", { id: "root" }, "hi ", "hello world");
+
 ReactDOM.createRoot(document.getElementById("root")).render(App);
