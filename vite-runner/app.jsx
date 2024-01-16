@@ -14,6 +14,7 @@ function App() {
     <div>
       hello world
       <Counter num={10}/>
+      <Counter num={20}/>
       {/* <CounterWrap /> */}
     </div>
   );

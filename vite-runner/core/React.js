@@ -134,11 +134,15 @@ function performWorkOfUnit(fiber) {
     // 有子节点 优先处理子节点
     return fiber.child;
   }
-  if (fiber.sibling) {
-    // 有兄弟节点 处理兄弟节点
-    return fiber.sibling;
+  // if (fiber.sibling) {
+  //   // 有兄弟节点 处理兄弟节点
+  //   return fiber.sibling;
+  // }
+  let nextFiber = fiber;
+  while (nextFiber) { // 往上一直找 直到找到有兄弟节点的父节点
+    if(nextFiber.sibling) return nextFiber.sibling // 有兄弟节点 返回兄弟节点
+    nextFiber = nextFiber.parent // 没有兄弟节点 返回父节点(解决渲染两个函数组件的情况)
   }
-
   return fiber.parent?.sibling; // 没有子节点也没有兄弟节点 返回父节点的兄弟节点
 }
 
