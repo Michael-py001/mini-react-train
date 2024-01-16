@@ -2,11 +2,27 @@ import React from "./core/React.js";
 
 // 实际上Vite会把jsx标签转成成下面的形式,这里引入了自己的React，所以用的是自己的React
 // const App = React.createElement("div", { id: "root" }, "hi ", "hello world");
-function AppOne() {
-  return <div>hello world</div>
+function CounterWrap() {
+  return <Counter></Counter>;
 }
-const App = <div>hello world</div>
+function Counter() {
+  return <div>count</div>;
+}
 
-console.log(App);
-console.log(AppOne);
+function App() {
+  return (
+    <div>
+      hello world
+      <CounterWrap />
+    </div>
+  );
+}
+
+// const App = (
+//   <div>
+//     hello world
+//     <CounterWrap />
+//   </div>
+// );
+
 export default App;
