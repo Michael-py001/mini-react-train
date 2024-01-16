@@ -15,7 +15,9 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map((child) => {
-        return typeof child === "object" ? child : createTextNode(child);
+        const isTextNode = typeof child === "string" || typeof child === "number";
+        return isTextNode ? createTextNode(child) : child;
+        // return typeof child === "object" ? child : createTextNode(child);
       }),
     },
   };
@@ -108,7 +110,8 @@ function initChildren(fiber, children) {
 function performWorkOfUnit(fiber) {
   const isFunctionComponent = fiber.type instanceof Function;
   if (isFunctionComponent) {
-    console.log(fiber.type());
+    // console.log(fiber.type());
+    console.log("fiber.props:",fiber.props);
   }
   // 如果不是函数组件才创建dom ->函数组件没有dom
   if (!isFunctionComponent) {
@@ -122,7 +125,8 @@ function performWorkOfUnit(fiber) {
     }
   }
   //如果是函数组件，调用该函数，获取children
-  const children = isFunctionComponent? [fiber.type()] : fiber.props.children || []; 
+ 
+  const children = isFunctionComponent? [fiber.type(fiber.props)] : fiber.props.children || []; 
   // 3. 处理children 树结构转换为链表 设置好指针
   initChildren(fiber,children);
   // 4. 返回下一个任务

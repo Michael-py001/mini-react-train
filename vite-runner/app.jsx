@@ -5,15 +5,16 @@ import React from "./core/React.js";
 function CounterWrap() {
   return <Counter></Counter>;
 }
-function Counter() {
-  return <div>count</div>;
+function Counter({num}) {
+  return <div>count: {num}</div>;
 }
 
 function App() {
   return (
     <div>
       hello world
-      <CounterWrap />
+      <Counter num={10}/>
+      {/* <CounterWrap /> */}
     </div>
   );
 }
