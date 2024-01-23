@@ -5,8 +5,15 @@ import React from "./core/React.js";
 function CounterWrap() {
   return <Counter></Counter>;
 }
+
+function handleClick() {
+  console.log("click");
+}
 function Counter({num}) {
-  return <div>count: {num}</div>;
+  return <div>
+    <div>count: {num}</div>
+    <button onClick={handleClick}>click</button>
+  </div>;
 }
 
 function App() {
@@ -14,7 +21,6 @@ function App() {
     <div>
       hello world
       <Counter num={10}/>
-      <Counter num={20}/>
       {/* <CounterWrap /> */}
     </div>
   );

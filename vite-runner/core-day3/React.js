@@ -58,6 +58,7 @@ function commitRoot(fiber) {
 function commitWork(fiber) {
   //递归处理子节点
   if (!fiber) return;
+  console.log("fiber:",fiber);
 
   let fiberParent = fiber.parent //记录父节点
 
@@ -79,18 +80,13 @@ function createDom({ type, props }) {
 }
 function updateProps(dom, props) {
   Object.keys(props).forEach((key) => {
-    if (key !== "children") { //children特殊处理
-      if(key.startsWith("on")) { // 以on开头的属性是事件
-        const eventName = key.slice(2).toLowerCase(); // 截取事件名
-        dom.addEventListener(eventName, props[key]); // 给dom添加事件
-      }else {
-        dom[key] = props[key];
-      }
+    if (key !== "children") {
+      //children特殊处理
+      dom[key] = props[key];
     }
   });
 }
 function initChildren(fiber, children) {
-  console.log(fiber);
   let prevChild = null;
   children.forEach((child, index) => {
     //用一个对象保存当前节点的信息
@@ -113,6 +109,10 @@ function initChildren(fiber, children) {
 }
 function performWorkOfUnit(fiber) {
   const isFunctionComponent = fiber.type instanceof Function;
+  if (isFunctionComponent) {
+    // console.log(fiber.type());
+    console.log("fiber.props:",fiber.props);
+  }
   // 如果不是函数组件才创建dom ->函数组件没有dom
   if (!isFunctionComponent) {
     //1. 创建dom
