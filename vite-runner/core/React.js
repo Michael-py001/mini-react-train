@@ -15,7 +15,8 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map((child) => {
-        const isTextNode = typeof child === "string" || typeof child === "number";
+        const isTextNode =
+          typeof child === "string" || typeof child === "number";
         return isTextNode ? createTextNode(child) : child;
         // return typeof child === "object" ? child : createTextNode(child);
       }),
@@ -59,13 +60,15 @@ function commitWork(fiber) {
   //递归处理子节点
   if (!fiber) return;
 
-  let fiberParent = fiber.parent //记录父节点
+  let fiberParent = fiber.parent; //记录父节点
 
   //使用while循环找到有dom节点的父节点，解决嵌套函数组件的问题
-  while(!fiberParent.dom) { // (因为函数组件没有dom)如果父节点没有dom节点，就一直往上找，直到找到有dom节点的父节点
-    fiberParent = fiberParent.parent
+  while (!fiberParent.dom) {
+    // (因为函数组件没有dom)如果父节点没有dom节点，就一直往上找，直到找到有dom节点的父节点
+    fiberParent = fiberParent.parent;
   }
-  if(fiber.dom) {// 有节点才添加(函数组件没有dom)
+  if (fiber.dom) {
+    // 有节点才添加(函数组件没有dom)
     fiberParent.dom.append(fiber.dom); // 把根节点添加到dom上
   }
   commitWork(fiber.child); // 递归处理子节点
@@ -79,18 +82,19 @@ function createDom({ type, props }) {
 }
 function updateProps(dom, props) {
   Object.keys(props).forEach((key) => {
-    if (key !== "children") { //children特殊处理
-      if(key.startsWith("on")) { // 以on开头的属性是事件
+    if (key !== "children") {
+      //children特殊处理
+      if (key.startsWith("on")) {
+        // 以on开头的属性是事件
         const eventName = key.slice(2).toLowerCase(); // 截取事件名
         dom.addEventListener(eventName, props[key]); // 给dom添加事件
-      }else {
+      } else {
         dom[key] = props[key];
       }
     }
   });
 }
 function initChildren(fiber, children) {
-  console.log(fiber);
   let prevChild = null;
   children.forEach((child, index) => {
     //用一个对象保存当前节点的信息
@@ -111,37 +115,38 @@ function initChildren(fiber, children) {
     prevChild = newFiber; // 保存上一个节点
   });
 }
+
+function updateFunctionComponent(fiber) {
+  const children = [fiber.type(fiber.props)];
+  initChildren(fiber, children);
+}
+
+function updateHostComponent(fiber) {
+  if (!fiber.dom) {
+    const dom = (fiber.dom = createDom(fiber)); // 保存dom
+    updateProps(dom, fiber.props);
+  }
+  const children = fiber.props.children;
+  initChildren(fiber, children);
+}
+
 function performWorkOfUnit(fiber) {
   const isFunctionComponent = fiber.type instanceof Function;
-  // 如果不是函数组件才创建dom ->函数组件没有dom
-  if (!isFunctionComponent) {
-    //1. 创建dom
-    if (!fiber.dom) {
-      // 没有dom节点才处理
-      const dom = (fiber.dom = createDom(fiber)); // 保存dom
-      // fiber.parent.dom.append(dom); // 把dom添加到父节点上
-      // 2. 设置属性props
-      updateProps(dom, fiber.props);
-    }
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber);
+  } else {
+    updateHostComponent(fiber);
   }
-  //如果是函数组件，调用该函数，获取children
- 
-  const children = isFunctionComponent? [fiber.type(fiber.props)] : fiber.props.children || []; 
-  // 3. 处理children 树结构转换为链表 设置好指针
-  initChildren(fiber,children);
   // 4. 返回下一个任务
   if (fiber.child) {
     // 有子节点 优先处理子节点
     return fiber.child;
   }
-  // if (fiber.sibling) {
-  //   // 有兄弟节点 处理兄弟节点
-  //   return fiber.sibling;
-  // }
   let nextFiber = fiber;
-  while (nextFiber) { // 往上一直找 直到找到有兄弟节点的父节点
-    if(nextFiber.sibling) return nextFiber.sibling // 有兄弟节点 返回兄弟节点
-    nextFiber = nextFiber.parent // 没有兄弟节点 返回父节点(解决渲染两个函数组件的情况)
+  while (nextFiber) {
+    // 往上一直找 直到找到有兄弟节点的父节点
+    if (nextFiber.sibling) return nextFiber.sibling; // 有兄弟节点 返回兄弟节点
+    nextFiber = nextFiber.parent; // 没有兄弟节点 返回父节点(解决渲染两个函数组件的情况)
   }
   return fiber.parent?.sibling; // 没有子节点也没有兄弟节点 返回父节点的兄弟节点
 }
