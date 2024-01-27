@@ -5,13 +5,18 @@ import React from "./core/React.js";
 function CounterWrap() {
   return <Counter></Counter>;
 }
+let count = 0;
+let props = {id:'test'}
 
-function handleClick() {
-  console.log("click");
-}
 function Counter({num}) {
-  return <div>
-    <div>count: {num}</div>
+  function handleClick() {
+    console.log("click");
+    count++; 
+    props = {} //验证props删除
+    React.update();
+  }
+  return <div {...props}>
+    <div >count: {count}</div>
     <button onClick={handleClick}>click</button>
   </div>;
 }
