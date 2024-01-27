@@ -23,18 +23,18 @@ function createElement(type, props, ...children) {
     },
   };
 }
-let root = null;
+// work in progress
+let wipRoot = null;
 let currentRoot = null;
 function render(el, container) {
-  nextWorkOfUnit = {
+  wipRoot = {
     // 在主入口中初始化任务队列
     dom: container,
     props: {
       children: [el],
     },
   };
-  // 记录跟节点
-  root = nextWorkOfUnit;
+  nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
 }
 
 let nextWorkOfUnit = null; // 当前正在工作的任务
@@ -45,7 +45,7 @@ function workLoop(deadline) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit); // 执行任务 返回下一个任务
     shouldYield = deadline.timeRemaining() < 1; // 没有时间了
   }
-  if (!nextWorkOfUnit && root) {
+  if (!nextWorkOfUnit && wipRoot) {
     //当没有任务时，说明所有链表都处理完了，统一提交更新
     commitRoot();
   }
@@ -53,9 +53,9 @@ function workLoop(deadline) {
 }
 
 function commitRoot(fiber) {
-  commitWork(root.child); // 提交更新 从根节点的第一个子节点开始
-  currentRoot = root; // 保存当前根节点
-  root = null; // 重置root节点
+  commitWork(wipRoot.child); // 提交更新 从根节点的第一个子节点开始
+  currentRoot = wipRoot; // 保存当前根节点
+  wipRoot = null; // 重置root节点
 }
 
 // 提交更新
@@ -211,14 +211,13 @@ function performWorkOfUnit(fiber) {
 requestIdleCallback(workLoop);
 
 function update() {
-  nextWorkOfUnit = {
+  wipRoot = {
     // 在主入口中初始化任务队列
     dom: currentRoot.dom,
     props: currentRoot.props,
     alternate: currentRoot, // 记录上一次的fiber
   };
-  // 记录跟节点
-  root = nextWorkOfUnit;
+  nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
 }
 const React = {
   createElement,
