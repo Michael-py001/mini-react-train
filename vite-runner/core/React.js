@@ -23,6 +23,7 @@ function createElement(type, props, ...children) {
     },
   };
 }
+let deletions = []; // 删除的节点
 // work in progress
 let wipRoot = null;
 let currentRoot = null;
@@ -52,12 +53,33 @@ function workLoop(deadline) {
   requestIdleCallback(workLoop);
 }
 
+// 提交更新
 function commitRoot(fiber) {
+  console.log("deletions:",deletions);
+  deletions.forEach(commitDeletion); // 提交删除
   commitWork(wipRoot.child); // 提交更新 从根节点的第一个子节点开始
   currentRoot = wipRoot; // 保存当前根节点
   wipRoot = null; // 重置root节点
+  deletions = []; // 重置删除的节点
 }
 
+// 提交删除
+function commitDeletion(fiber) {
+  if (fiber.dom) {
+    // 有dom节点才删除
+    let fiberParent = fiber.parent; //记录父节点
+
+    //使用while循环找到有dom节点的父节点，解决嵌套函数组件的问题
+    while (!fiberParent.dom) {
+      // (因为函数组件没有dom)如果父节点没有dom节点，就一直往上找，直到找到有dom节点的父节点
+      fiberParent = fiberParent.parent;
+    }
+    // fiber.dom.remove();
+    fiberParent.dom.removeChild(fiber.dom);
+  } else {
+    commitDeletion(fiber.child);
+  }
+}
 // 提交更新
 function commitWork(fiber) {
   //递归处理子节点
@@ -86,19 +108,6 @@ function createDom({ type, props }) {
     : document.createElement(type);
 }
 function updateProps(dom, nextProps, prevProps) {
-  // Object.keys(nextProps).forEach((key) => {
-  //   if (key !== "children") {
-  //     //children特殊处理
-  //     if (key.startsWith("on")) {
-  //       // 以on开头的属性是事件
-  //       const eventName = key.slice(2).toLowerCase(); // 截取事件名
-  //       dom.addEventListener(eventName, nextProps[key]); // 给dom添加事件
-  //     } else {
-  //       dom[key] = nextProps[key];
-  //     }
-  //   }
-  // });
-
   /***
    * 1.new 没有 old 有 删除 比如 old: {id:1} new:{} 删除id
    * 2.new 有 old 没有 添加
@@ -116,7 +125,8 @@ function updateProps(dom, nextProps, prevProps) {
   // 2.更新 3.添加 2和3可以合并
   Object.keys(nextProps).forEach((key) => {
     if (key !== "children") {
-      if (prevProps[key] !== nextProps[key]) { // 如果属性值不同
+      if (prevProps[key] !== nextProps[key]) {
+        // 如果属性值不同
         //children特殊处理
         if (key.startsWith("on")) {
           // 以on开头的属性是事件
@@ -160,6 +170,10 @@ function initChildren(fiber, children) {
         sibling: null,
         effectTag: "PLACEMENT", // 新增节点
       };
+      if (oldFiber) {
+        console.log("show delete fiber:", oldFiber);
+        deletions.push(oldFiber); // 保存删除的节点
+      }
     }
     if (oldFiber) {
       oldFiber = oldFiber.sibling; // 旧的fiber的兄弟节点
@@ -222,6 +236,6 @@ function update() {
 const React = {
   createElement,
   render,
-  update
+  update,
 };
 export default React;
