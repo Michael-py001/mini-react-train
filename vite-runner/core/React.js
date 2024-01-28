@@ -55,7 +55,7 @@ function workLoop(deadline) {
 
 // 提交更新
 function commitRoot(fiber) {
-  console.log("deletions:",deletions);
+  console.log("show deletions:", deletions);
   deletions.forEach(commitDeletion); // 提交删除
   commitWork(wipRoot.child); // 提交更新 从根节点的第一个子节点开始
   currentRoot = wipRoot; // 保存当前根节点
@@ -75,6 +75,8 @@ function commitDeletion(fiber) {
       fiberParent = fiberParent.parent;
     }
     // fiber.dom.remove();
+    console.log("fiberParent:",fiberParent);
+    console.log("fiber.dom:",fiber.dom);
     fiberParent.dom.removeChild(fiber.dom);
   } else {
     commitDeletion(fiber.child);
@@ -171,7 +173,6 @@ function initChildren(fiber, children) {
         effectTag: "PLACEMENT", // 新增节点
       };
       if (oldFiber) {
-        console.log("show delete fiber:", oldFiber);
         deletions.push(oldFiber); // 保存删除的节点
       }
     }
@@ -185,6 +186,11 @@ function initChildren(fiber, children) {
     }
     prevChild = newFiber; // 保存上一个节点
   });
+  // 处理完成后，删除多余的节点
+  while(oldFiber) {
+    deletions.push(oldFiber)
+    oldFiber = oldFiber.sibling //指向下一个兄弟节点
+  }
 }
 
 function updateFunctionComponent(fiber) {
