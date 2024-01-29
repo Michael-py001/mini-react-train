@@ -27,6 +27,7 @@ let deletions = []; // 删除的节点
 // work in progress
 let wipRoot = null;
 let currentRoot = null;
+let wipFiber = null;
 function render(el, container) {
   wipRoot = {
     // 在主入口中初始化任务队列
@@ -44,6 +45,9 @@ function workLoop(deadline) {
   // 有任务并且当前帧还没有结束
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit); // 执行任务 返回下一个任务
+    if(wipRoot?.sibling?.type === nextWorkOfUnit?.type) { //检测当前节点的兄弟节点是否是下一个任务
+      nextWorkOfUnit = undefined // 跳过下一个节点的处理
+    }
     shouldYield = deadline.timeRemaining() < 1; // 没有时间了
   }
   if (!nextWorkOfUnit && wipRoot) {
@@ -55,7 +59,6 @@ function workLoop(deadline) {
 
 // 提交更新
 function commitRoot(fiber) {
-  console.log("show deletions:", deletions);
   deletions.forEach(commitDeletion); // 提交删除
   commitWork(wipRoot.child); // 提交更新 从根节点的第一个子节点开始
   currentRoot = wipRoot; // 保存当前根节点
@@ -187,7 +190,7 @@ function reconcileChildren(fiber, children) {
     } else {
       prevChild.sibling = newFiber; // 设置兄弟节点
     }
-    if(newFiber) {
+    if (newFiber) {
       prevChild = newFiber; // 保存上一个节点
     }
   });
@@ -199,6 +202,7 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+  wipFiber = fiber; // 保存当前正在工作的fiber
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
@@ -236,13 +240,21 @@ function performWorkOfUnit(fiber) {
 requestIdleCallback(workLoop);
 
 function update() {
-  wipRoot = {
-    // 在主入口中初始化任务队列
-    dom: currentRoot.dom,
-    props: currentRoot.props,
-    alternate: currentRoot, // 记录上一次的fiber
+  let currentFiber = wipFiber;
+  return () => {
+    console.log("currentFiber:",currentFiber);
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber, // 指针指向当前fiber
+    }
+    // wipRoot = {
+    //   // 在主入口中初始化任务队列
+    //   dom: currentRoot.dom,
+    //   props: currentRoot.props,
+    //   alternate: currentRoot, // 记录上一次的fiber
+    // };
+    nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
   };
-  nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
 }
 const React = {
   createElement,
