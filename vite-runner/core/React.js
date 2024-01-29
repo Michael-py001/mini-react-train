@@ -75,8 +75,8 @@ function commitDeletion(fiber) {
       fiberParent = fiberParent.parent;
     }
     // fiber.dom.remove();
-    console.log("fiberParent:",fiberParent);
-    console.log("fiber.dom:",fiber.dom);
+    console.log("fiberParent:", fiberParent);
+    console.log("fiber.dom:", fiber.dom);
     fiberParent.dom.removeChild(fiber.dom);
   } else {
     commitDeletion(fiber.child);
@@ -142,7 +142,7 @@ function updateProps(dom, nextProps, prevProps) {
     }
   });
 }
-function initChildren(fiber, children) {
+function reconcileChildren(fiber, children) {
   let oldFiber = fiber.alternate?.child; // 旧的fiber的第一个子节点
   let prevChild = null;
   children.forEach((child, index) => {
@@ -161,17 +161,20 @@ function initChildren(fiber, children) {
         alternate: oldFiber, // 保存上一次的fiber
       };
     } else {
-      // add
-      //用一个对象保存当前节点的信息
-      newFiber = {
-        parent: fiber,
-        dom: null,
-        props: child.props,
-        type: child.type,
-        child: null,
-        sibling: null,
-        effectTag: "PLACEMENT", // 新增节点
-      };
+      if (child) {
+        // add
+        //用一个对象保存当前节点的信息
+        newFiber = {
+          parent: fiber,
+          dom: null,
+          props: child.props,
+          type: child.type,
+          child: null,
+          sibling: null,
+          effectTag: "PLACEMENT", // 新增节点
+        };
+      }
+
       if (oldFiber) {
         deletions.push(oldFiber); // 保存删除的节点
       }
@@ -184,18 +187,20 @@ function initChildren(fiber, children) {
     } else {
       prevChild.sibling = newFiber; // 设置兄弟节点
     }
-    prevChild = newFiber; // 保存上一个节点
+    if(newFiber) {
+      prevChild = newFiber; // 保存上一个节点
+    }
   });
   // 处理完成后，删除多余的节点
-  while(oldFiber) {
-    deletions.push(oldFiber)
-    oldFiber = oldFiber.sibling //指向下一个兄弟节点
+  while (oldFiber) {
+    deletions.push(oldFiber);
+    oldFiber = oldFiber.sibling; //指向下一个兄弟节点
   }
 }
 
 function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)];
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 
 function updateHostComponent(fiber) {
@@ -204,7 +209,7 @@ function updateHostComponent(fiber) {
     updateProps(dom, fiber.props, {});
   }
   const children = fiber.props.children;
-  initChildren(fiber, children);
+  reconcileChildren(fiber, children);
 }
 
 function performWorkOfUnit(fiber) {
