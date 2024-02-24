@@ -261,7 +261,6 @@ function useState(initial) {
     state: oldHook ? oldHook.state : initial,
     queue: oldHook ? oldHook.queue : [],
   }
-  console.log('666');
   stateHook.queue.forEach(action => {
     stateHook.state = action(stateHook.state);
   })
@@ -272,6 +271,10 @@ function useState(initial) {
   currentFiber.stateHooks = stateHooks;
 
   function setState(action) {
+    // 提前检测 减少不必要的更新
+    const eagerState = typeof action === 'function' ? action(stateHook.state) : action
+    if(eagerState === stateHook.state) return
+
     stateHook.queue.push(typeof action === 'function' ? action : () => action)
     wipRoot = {
       ...currentFiber,
