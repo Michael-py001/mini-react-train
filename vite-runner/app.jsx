@@ -12,9 +12,9 @@ function Bar() {
     // setBar('bar')
   }
 
-  // React.useEffect(() => {
-  //   console.log('init');
-  // },[])
+  React.useEffect(() => {
+    console.log('init');
+  },[])
 
   React.useEffect(() => {
     console.log('update',count);

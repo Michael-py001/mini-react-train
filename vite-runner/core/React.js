@@ -4,8 +4,8 @@ function createTextNode(text) {
     type: "TEXT_ELEMENT",
     props: {
       nodeValue: text,
-      children: [],
-    },
+      children: []
+    }
   };
 }
 //5 封装createElement
@@ -19,8 +19,8 @@ function createElement(type, props, ...children) {
           typeof child === "string" || typeof child === "number";
         return isTextNode ? createTextNode(child) : child;
         // return typeof child === "object" ? child : createTextNode(child);
-      }),
-    },
+      })
+    }
   };
 }
 let deletions = []; // 删除的节点
@@ -33,8 +33,8 @@ function render(el, container) {
     // 在主入口中初始化任务队列
     dom: container,
     props: {
-      children: [el],
-    },
+      children: [el]
+    }
   };
   nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
 }
@@ -45,8 +45,9 @@ function workLoop(deadline) {
   // 有任务并且当前帧还没有结束
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit); // 执行任务 返回下一个任务
-    if(wipRoot?.sibling?.type === nextWorkOfUnit?.type) { //检测当前节点的兄弟节点是否是下一个任务
-      nextWorkOfUnit = undefined // 跳过下一个节点的处理
+    if (wipRoot?.sibling?.type === nextWorkOfUnit?.type) {
+      //检测当前节点的兄弟节点是否是下一个任务
+      nextWorkOfUnit = undefined; // 跳过下一个节点的处理
     }
     shouldYield = deadline.timeRemaining() < 1; // 没有时间了
   }
@@ -61,37 +62,40 @@ function workLoop(deadline) {
 function commitRoot(fiber) {
   deletions.forEach(commitDeletion); // 提交删除
   commitWork(wipRoot.child); // 提交更新 从根节点的第一个子节点开始
-  commitEffectHook();
+  commitEffectHooks();
   currentRoot = wipRoot; // 保存当前根节点
   wipRoot = null; // 重置root节点
   deletions = []; // 重置删除的节点
 }
 
-function commitEffectHook() {
-
+function commitEffectHooks() {
   function run(fiber) {
-    if(!fiber) return
-    if(!fiber.alternate) {
+    if (!fiber) return;
+    if (!fiber.alternate) {
       // 初始化
-      fiber.effectHook?.callback()
-    }
-    else {
+      fiber.effectHooks?.forEach((hook) => {
+        hook.callback();
+      });
+    } else {
       // 更新
       // deps有没有发生改变
-      const oldEffectHook = fiber.alternate?.effectHook
-      console.log("oldEffectHook:",oldEffectHook);
-      const needUpdate = oldEffectHook?.deps.some((oldDeps, index) => {
-        return oldDeps !== fiber.effectHook?.deps[index] //老的依赖和新的依赖不一样, index代表对应的依赖下标
-      })
+      fiber.effectHooks?.forEach((newHook, index) => {
+        if (newHook.deps.length > 0) {
+          const oldEffectHook = fiber.alternate?.effectHooks[index];
+          console.log("oldEffectHook:", oldEffectHook);
+          const needUpdate = oldEffectHook?.deps.some((oldDeps, i) => {
+            return oldDeps !== newHook.deps[i]; //老的依赖和新的依赖不一样, index代表对应的依赖下标
+          });
 
-      needUpdate && fiber.effectHook?.callback()
-
+          needUpdate && newHook.callback();
+        }
+      });
     }
-    run(fiber.child)
-    run(fiber.sibling)
+    run(fiber.child);
+    run(fiber.sibling);
   }
 
-  run(wipRoot)
+  run(wipRoot);
 }
 
 // 提交删除
@@ -189,7 +193,7 @@ function reconcileChildren(fiber, children) {
         child: null,
         sibling: null,
         effectTag: "UPDATE", // 更新节点
-        alternate: oldFiber, // 保存上一次的fiber
+        alternate: oldFiber // 保存上一次的fiber
       };
     } else {
       if (child) {
@@ -202,7 +206,7 @@ function reconcileChildren(fiber, children) {
           type: child.type,
           child: null,
           sibling: null,
-          effectTag: "PLACEMENT", // 新增节点
+          effectTag: "PLACEMENT" // 新增节点
         };
       }
 
@@ -230,8 +234,9 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
-  stateHooks = []
-  stateHookIndex = 0
+  stateHooks = [];
+  stateHookIndex = 0;
+  effectHooks = []; //初始化effectHooks
   wipFiber = fiber; // 保存当前正在工作的fiber
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
@@ -274,8 +279,8 @@ function update() {
   return () => {
     wipRoot = {
       ...currentFiber,
-      alternate: currentFiber, // 指针指向当前fiber
-    }
+      alternate: currentFiber // 指针指向当前fiber
+    };
     nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
   };
 }
@@ -287,41 +292,42 @@ function useState(initial) {
   const oldHook = currentFiber.alternate?.stateHooks[stateHookIndex];
   const stateHook = {
     state: oldHook ? oldHook.state : initial,
-    queue: oldHook ? oldHook.queue : [],
-  }
-  stateHook.queue.forEach(action => {
+    queue: oldHook ? oldHook.queue : []
+  };
+  stateHook.queue.forEach((action) => {
     stateHook.state = action(stateHook.state);
-  })
-  stateHook.queue = []
+  });
+  stateHook.queue = [];
 
-  stateHookIndex++
-  stateHooks.push(stateHook)
+  stateHookIndex++;
+  stateHooks.push(stateHook);
   currentFiber.stateHooks = stateHooks;
 
   function setState(action) {
     // 提前检测 减少不必要的更新
-    const eagerState = typeof action === 'function' ? action(stateHook.state) : action
-    if(eagerState === stateHook.state) return
+    const eagerState =
+      typeof action === "function" ? action(stateHook.state) : action;
+    if (eagerState === stateHook.state) return;
 
-    stateHook.queue.push(typeof action === 'function' ? action : () => action)
+    stateHook.queue.push(typeof action === "function" ? action : () => action);
     wipRoot = {
       ...currentFiber,
-      alternate: currentFiber, // 指针指向当前fiber
-    }
+      alternate: currentFiber // 指针指向当前fiber
+    };
     nextWorkOfUnit = wipRoot; // 记录当前正在工作的任务
   }
 
-  return [stateHook.state, setState]
+  return [stateHook.state, setState];
 }
 
+let effectHooks;
 function useEffect(callback, deps) {
   const effectHook = {
     callback,
     deps
-  }
-
-  wipFiber.effectHook = effectHook
-
+  };
+  effectHooks.push(effectHook);
+  wipFiber.effectHooks = effectHooks;
 }
 const React = {
   createElement,
