@@ -7,10 +7,18 @@ function Bar() {
   const [count ,setCount] = React.useState(0)
   const [bars ,setBar] = React.useState('bar')
   function handleClick() {
-    // setCount((count) => count + 1);
+    setCount((count) => count + 1);
     // setBar((s) => s + 'bar')
-    setBar('bar')
+    // setBar('bar')
   }
+
+  // React.useEffect(() => {
+  //   console.log('init');
+  // },[])
+
+  React.useEffect(() => {
+    console.log('update',count);
+  },[count])
   return (
     <div>
       {count}

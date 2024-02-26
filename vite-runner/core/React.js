@@ -61,9 +61,37 @@ function workLoop(deadline) {
 function commitRoot(fiber) {
   deletions.forEach(commitDeletion); // 提交删除
   commitWork(wipRoot.child); // 提交更新 从根节点的第一个子节点开始
+  commitEffectHook();
   currentRoot = wipRoot; // 保存当前根节点
   wipRoot = null; // 重置root节点
   deletions = []; // 重置删除的节点
+}
+
+function commitEffectHook() {
+
+  function run(fiber) {
+    if(!fiber) return
+    if(!fiber.alternate) {
+      // 初始化
+      fiber.effectHook?.callback()
+    }
+    else {
+      // 更新
+      // deps有没有发生改变
+      const oldEffectHook = fiber.alternate?.effectHook
+      console.log("oldEffectHook:",oldEffectHook);
+      const needUpdate = oldEffectHook?.deps.some((oldDeps, index) => {
+        return oldDeps !== fiber.effectHook?.deps[index] //老的依赖和新的依赖不一样, index代表对应的依赖下标
+      })
+
+      needUpdate && fiber.effectHook?.callback()
+
+    }
+    run(fiber.child)
+    run(fiber.sibling)
+  }
+
+  run(wipRoot)
 }
 
 // 提交删除
@@ -285,10 +313,21 @@ function useState(initial) {
 
   return [stateHook.state, setState]
 }
+
+function useEffect(callback, deps) {
+  const effectHook = {
+    callback,
+    deps
+  }
+
+  wipFiber.effectHook = effectHook
+
+}
 const React = {
   createElement,
   render,
   update,
-  useState
+  useState,
+  useEffect
 };
 export default React;
