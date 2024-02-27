@@ -74,27 +74,35 @@ function commitEffectHooks() {
     if (!fiber.alternate) {
       // 初始化
       fiber.effectHooks?.forEach((hook) => {
-        hook.callback();
+        hook.cleanup = hook.callback(); //把useEffect return 出去的函数接收
       });
     } else {
       // 更新
       // deps有没有发生改变
       fiber.effectHooks?.forEach((newHook, index) => {
-        if (newHook.deps.length > 0) {
+        if (newHook?.deps?.length > 0) {
           const oldEffectHook = fiber.alternate?.effectHooks[index];
           console.log("oldEffectHook:", oldEffectHook);
           const needUpdate = oldEffectHook?.deps.some((oldDeps, i) => {
             return oldDeps !== newHook.deps[i]; //老的依赖和新的依赖不一样, index代表对应的依赖下标
           });
 
-          needUpdate && newHook.callback();
+          needUpdate && (newHook.cleanup = newHook.callback());
         }
       });
     }
     run(fiber.child);
     run(fiber.sibling);
   }
-
+  function runCleanup(fiber) {
+    if(!fiber) return
+    fiber.alternate?.effectHooks?.forEach((hook) => {
+      hook.cleanup && hook.cleanup();
+    })
+    runCleanup(fiber.child)
+    runCleanup(fiber.sibling)
+  }
+  runCleanup(wipRoot) //在运行useEffect前先清除上一次的副作用
   run(wipRoot);
 }
 
@@ -110,8 +118,6 @@ function commitDeletion(fiber) {
       fiberParent = fiberParent.parent;
     }
     // fiber.dom.remove();
-    console.log("fiberParent:", fiberParent);
-    console.log("fiber.dom:", fiber.dom);
     fiberParent.dom.removeChild(fiber.dom);
   } else {
     commitDeletion(fiber.child);
@@ -324,7 +330,8 @@ let effectHooks;
 function useEffect(callback, deps) {
   const effectHook = {
     callback,
-    deps
+    deps,
+    cleanup: undefined
   };
   effectHooks.push(effectHook);
   wipFiber.effectHooks = effectHooks;
